@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}Котики{% endblock %}
+
+{% block content %}
+<section class="py-5 text-center container">
+    <div class="row py-lg-5">
+      <div class="col-lg-6 col-md-8 mx-auto">
+        <h1 class="fw-light">Котики котовские</h1>
+        <p class="lead text-body-secondary">Кошкаровские</p>
+        <p>
+            <a href="{{ url_for('add_cat') }}" class="btn btn-primary my-2">Накатить кошатинки</a>
+            <a href="{{ url_for('add_breed') }}" class="btn btn-secondary my-2">Добавить породу</a>
+            <a href="{{ url_for('register') }}" class="btn btn-success my-2">Регистрация</a>
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <div class="album py-5 bg-body-tertiary">
+    <div class="container">
+
+      <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-3">
+        {% for cat in cats %}
+        <div class="col">
+          <div class="card shadow-sm">
+            <!--{% if cat.image %}
+             <img src="{{ cat.image_url }}" alt="{{ cat.name }}" class="bd-placeholder-img card-img-top" width="100%" height="225">
+            {% else %}-->
+            <svg class="bd-placeholder-img card-img-top" width="100%" height="225" xmlns="http://www.w3.org/2000/svg"
+                 role="img" aria-label="Placeholder: Thumbnail" preserveAspectRatio="xMidYMid slice"
+                 focusable="false">
+              <title>Placeholder</title>
+              <rect width="100%" height="100%" fill="#55595c"/>
+              <text x="50%" y="50%" fill="#eceeef" dy=".3em">Нет изображения</text>
+            </svg>
+            <!--{% endif %} -->
+            <div class="card-body">
+                <h5 class="card-title">{{ cat.name }}</h5>
+                <p class="card-text small">{{ cat.gender.name }}, {{ cat.breed.name }}</p>
+                <p class="card-text">{{ cat.description }}</p>
+                <div class="d-flex justify-content-between align-items-center">
+                <div class="btn-group">
+                  <a href="{{ url_for('cat_detail', cat_id=cat.id) }}" class="btn btn-sm btn-outline-secondary">Мурляу</a>
+                  <a href="{{ url_for('edit_cat', cat_id=cat.id) }}" class="btn btn-sm btn-outline-secondary">Редактировать</button>
+                  <a href="{{ url_for('delete_confirm', cat_id=cat.id) }}" class="btn btn-sm btn-outline-danger">Удалить</a>
+                </div>
+                <small class="text-body-secondary">Возраст: {{ cat.age }}</small>
+              </div>
+            </div>
+          </div>
+        </div>
+        {% else %}
+        <p>Папа а дэ котик</p>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+{% endblock%}
