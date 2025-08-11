@@ -1,11 +1,16 @@
 from flask import Flask, render_template, request, redirect, url_for, flash
+from flask_login import LoginManager, login_required, current_user, login_user, logout_user
 
+from forms import RegistrationForm, LoginForm
 from models import Cat, Breed, Gender, User
 
 app = Flask(__name__)
-
+app.secret_key = 'you_will_never_guess'
+login = LoginManager(app)
+login.login_view = 'login'
 
 @app.route('/')
+@login_required
 def index():
     cats = Cat.select().join(Breed).switch(Cat).join(Gender)
     return render_template('cats.html', cats=cats)
@@ -144,6 +149,37 @@ def register():
 
     return render_template('register.html')
 
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+    form = RegistrationForm()
+    if form.validate_on_submit():
+        user = User(username=form.username.data, email=form.email.data)
+        user.set_password(form.password.data)
+        user.save()  # Сохраните пользователя в базе данных
+        flash('Congratulations, you are now a registered user!')
+        return redirect(url_for('login'))
+    return render_template('register.html', title='Register', form=form)
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if current_user.is_authenticated:
+        return redirect(url_for('index'))
+    form = LoginForm()
+    if form.validate_on_submit():
+        user = User.get_or_none(User.username == form.username.data)
+        if user and user.check_password(form.password.data):
+            login_user(user)
+            return redirect(url_for('index'))
+        else:
+            flash('Invalid username or password')
+    return render_template('login.html', title='Login', form=form)
+
+@app.route('/logout')
+def logout():
+    logout_user()
+    return redirect(url_for('index'))
 
 if __name__ == '__main__':
     app.run(debug=True)

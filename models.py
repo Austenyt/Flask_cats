@@ -1,5 +1,8 @@
+from flask_login import UserMixin
 from peewee import *
 from werkzeug.security import generate_password_hash, check_password_hash
+
+from app import login
 
 db = SqliteDatabase('cats.db')
 
@@ -29,9 +32,9 @@ class Cat(Base):
     has_passport = BooleanField(default=False)
 
 
-class User(Base):
-    email = CharField(unique=True)
+class User(UserMixin, Base):
     username = CharField(unique=True)
+    email = CharField(unique=True)
     password_hash = CharField()
 
     def set_password(self, password):
@@ -39,6 +42,10 @@ class User(Base):
 
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
+
+@login.user_loader
+def load_user(user_id):
+    return User.get_or_none(User.id == user_id)
 
 
 db.connect()
