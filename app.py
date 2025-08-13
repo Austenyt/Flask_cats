@@ -1,16 +1,21 @@
-from flask import Flask, render_template, request, redirect, url_for, flash
-from flask_login import LoginManager, login_required, current_user, login_user, logout_user
+import os
 
-from forms import RegistrationForm, LoginForm
-from models import Cat, Breed, Gender, User
+from flask import Flask, render_template, request, redirect, url_for, flash, send_from_directory
+# from flask_login import LoginManager, login_required, current_user, login_user, logout_user
+
+# from forms import RegistrationForm, LoginForm
+from models import Cat, Breed, Gender
 
 app = Flask(__name__)
-app.secret_key = 'you_will_never_guess'
-login = LoginManager(app)
-login.login_view = 'login'
+
+
+# app.secret_key = 'you_will_never_guess'
+# login = LoginManager(app)
+# login.login_view = 'login'
+
 
 @app.route('/')
-@login_required
+# @login_required
 def index():
     cats = Cat.select().join(Breed).switch(Cat).join(Gender)
     return render_template('cats.html', cats=cats)
@@ -28,7 +33,11 @@ def add_cat():
         temper = request.form['temper']
         description = request.form.get('description')
         has_passport = request.form.get('has_passport') == 'on'
-        print(gender, type(gender))
+        image = request.files.get('image')
+        print(image)
+        if image:
+            image.save('media/' + image.filename)
+            image = 'media/' + image.filename
 
         Cat.create(
             name=name,
@@ -39,12 +48,19 @@ def add_cat():
             weight=weight,
             temper=temper,
             description=description,
-            has_passport=has_passport
+            has_passport=has_passport,
+            image_path=image,
         )
         return redirect(url_for('index'))
     breeds = Breed.select()
     genders = Gender.select()
     return render_template('add_cat.html', breeds=breeds, genders=genders)
+
+
+@app.route('/media/<filepath>')
+def media(filepath):
+    return send_from_directory(directory=os.path.dirname('media/' + filepath),
+                               path=os.path.basename('media/' + filepath))
 
 
 @app.route('/edit_cat/<int:cat_id>', methods=['GET', 'POST'])
@@ -69,7 +85,11 @@ def edit_cat(cat_id):
         cat.weight = float(request.form['weight'])
         cat.temper = request.form['temper']
         cat.description = request.form.get('description')
-        cat.has_passport = 'has_passport' in request.form  # checkbox может отсутствовать
+        cat.has_passport = 'has_passport' in request.form
+        image = request.files.get('image')
+        if image:
+            image.save('media/' + image.filename)
+            cat.image_path = 'media/' + image.filename
         cat.save()
         return redirect(url_for('index'))
 
@@ -89,12 +109,6 @@ def add_breed():
         return redirect(url_for('index'))
 
     return render_template('add_breed.html')
-
-
-@app.route('/all_cats')
-def all_cats():
-    cats = Cat.select().join(Breed).switch(Cat).join(Gender)
-    return render_template('index.html', cats=cats)
 
 
 @app.route('/cat/<int:cat_id>', methods=['GET'])
@@ -149,37 +163,41 @@ def register():
 
     return render_template('register.html')
 
-@app.route('/register', methods=['GET', 'POST'])
-def register():
-    if current_user.is_authenticated:
-        return redirect(url_for('index'))
-    form = RegistrationForm()
-    if form.validate_on_submit():
-        user = User(username=form.username.data, email=form.email.data)
-        user.set_password(form.password.data)
-        user.save()  # Сохраните пользователя в базе данных
-        flash('Congratulations, you are now a registered user!')
-        return redirect(url_for('login'))
-    return render_template('register.html', title='Register', form=form)
 
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    if current_user.is_authenticated:
-        return redirect(url_for('index'))
-    form = LoginForm()
-    if form.validate_on_submit():
-        user = User.get_or_none(User.username == form.username.data)
-        if user and user.check_password(form.password.data):
-            login_user(user)
-            return redirect(url_for('index'))
-        else:
-            flash('Invalid username or password')
-    return render_template('login.html', title='Login', form=form)
+# @app.route('/register', methods=['GET', 'POST'])
+# def register():
+#     if current_user.is_authenticated:
+#         return redirect(url_for('index'))
+#     form = RegistrationForm()
+#     if form.validate_on_submit():
+#         user = User(username=form.username.data, email=form.email.data)
+#         user.set_password(form.password.data)
+#         user.save()  # Сохраните пользователя в базе данных
+#         flash('Congratulations, you are now a registered user!')
+#         return redirect(url_for('login'))
+#     return render_template('register.html', title='Register', form=form)
+#
+#
+# @app.route('/login', methods=['GET', 'POST'])
+# def login():
+#     if current_user.is_authenticated:
+#         return redirect(url_for('index'))
+#     form = LoginForm()
+#     if form.validate_on_submit():
+#         user = User.get_or_none(User.username == form.username.data)
+#         if user and user.check_password(form.password.data):
+#             login_user(user)
+#             return redirect(url_for('index'))
+#         else:
+#             flash('Invalid username or password')
+#     return render_template('login.html', title='Login', form=form)
+#
+#
+# @app.route('/logout')
+# def logout():
+#     logout_user()
+#     return redirect(url_for('index'))
 
-@app.route('/logout')
-def logout():
-    logout_user()
-    return redirect(url_for('index'))
 
 if __name__ == '__main__':
     app.run(debug=True)
