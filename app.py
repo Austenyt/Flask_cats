@@ -1,21 +1,19 @@
 import os
+import hashlib
 
-from flask import Flask, render_template, request, redirect, url_for, flash, send_from_directory
-# from flask_login import LoginManager, login_required, current_user, login_user, logout_user
-
-# from forms import RegistrationForm, LoginForm
-from models import Cat, Breed, Gender
+from flask import Flask, render_template, request, redirect, url_for, send_from_directory, session
+from models import Cat, Breed, Gender, User
 
 app = Flask(__name__)
+app.config['SECRET_KEY'] = 'the random string'
 
 
-# app.secret_key = 'you_will_never_guess'
-# login = LoginManager(app)
-# login.login_view = 'login'
+def password_hash(password):
+    hash_object = hashlib.sha256(password.encode()).hexdigest()
+    return hash_object
 
 
 @app.route('/')
-# @login_required
 def index():
     cats = Cat.select().join(Breed).switch(Cat).join(Gender)
     return render_template('cats.html', cats=cats)
@@ -140,63 +138,51 @@ def delete_confirm(cat_id):
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
-    if request.method == 'POST':
-        username = request.form['username'].strip()
-        email = request.form['email'].strip()
+    if request.method == 'GET':
+        return render_template('register.html')
+    else:
+        username = request.form['username']
+        email = request.form['email']
         password = request.form['password']
         password_confirm = request.form['password_confirm']
-
         if password != password_confirm:
-            flash('Пароли не совпадают', 'danger')
-            return render_template('register.html')
-
-        if User.select().where((User.username == username) | (User.email == email)).exists():
-            flash('Пользователь с таким логином или email уже существует', 'danger')
-            return render_template('register.html')
-
-        user = User(username=username, email=email)
-        user.set_password(password)
-        user.save()
-
-        flash('Регистрация прошла успешно! Войдите в систему.', 'success')
-        return redirect(url_for('login'))
-
-    return render_template('register.html')
+            return render_template('register.html', error='Пароли не совпадают')
+        try:
+            User.create(
+                username=username,
+                email=email,
+                password_hash=password_hash(password),
+            )
+            return redirect(url_for('index'))
+        except Exception as error:
+            return render_template('register.html', error=error)
 
 
-# @app.route('/register', methods=['GET', 'POST'])
-# def register():
-#     if current_user.is_authenticated:
-#         return redirect(url_for('index'))
-#     form = RegistrationForm()
-#     if form.validate_on_submit():
-#         user = User(username=form.username.data, email=form.email.data)
-#         user.set_password(form.password.data)
-#         user.save()  # Сохраните пользователя в базе данных
-#         flash('Congratulations, you are now a registered user!')
-#         return redirect(url_for('login'))
-#     return render_template('register.html', title='Register', form=form)
-#
-#
-# @app.route('/login', methods=['GET', 'POST'])
-# def login():
-#     if current_user.is_authenticated:
-#         return redirect(url_for('index'))
-#     form = LoginForm()
-#     if form.validate_on_submit():
-#         user = User.get_or_none(User.username == form.username.data)
-#         if user and user.check_password(form.password.data):
-#             login_user(user)
-#             return redirect(url_for('index'))
-#         else:
-#             flash('Invalid username or password')
-#     return render_template('login.html', title='Login', form=form)
-#
-#
-# @app.route('/logout')
-# def logout():
-#     logout_user()
-#     return redirect(url_for('index'))
+@app.route('/authorize', methods=['GET', 'POST'])
+def authorize():
+    if request.method == 'GET':
+        return render_template('authorize.html')
+    else:
+        email = request.form['email']
+        password = request.form['password']
+        user = User.get_or_none(User.email == email)
+
+        if user:
+            if user.password_hash == password_hash(password):
+                session['user_id'] = user.id
+                session['username'] = user.username
+                return redirect(url_for('index'))
+            else:
+                return render_template('authorize.html', error='Неверный пароль')
+        else:
+            return render_template('authorize.html', error='Пользователь не найден')
+
+
+@app.route('/profile', methods=['GET'])
+def profile():
+    user = User.get_or_none(User.id == session['user_id'])
+
+    return render_template('profile.html', user=user)
 
 
 if __name__ == '__main__':

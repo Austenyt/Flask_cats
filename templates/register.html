@@ -3,35 +3,25 @@
 {% block content %}
     <h1>Register</h1>
     <form method="POST">
-        {{ form.hidden_tag() }}
-        <p>
-            {{ form.username.label }}<br>
-            {{ form.username(size=32) }}<br>
-            {% for error in form.username.errors %}
-                <span style="color: red;">[{{ error }}]</span>
-            {% endfor %}
-        </p>
-        <p>
-            {{ form.email.label }}<br>
-            {{ form.email(size=64) }}<br>
-            {% for error in form.email.errors %}
-                <span style="color: red;">[{{ error }}]</span>
-            {% endfor %}
-        </p>
-        <p>
-            {{ form.password.label }}<br>
-            {{ form.password(size=32) }}<br>
-            {% for error in form.password.errors %}
-                <span style="color: red;">[{{ error }}]</span>
-            {% endfor %}
-        </p>
-        <p>
-            {{ form.password2.label }}<br>
-            {{ form.password2(size=32) }}<br>
-            {% for error in form.password2.errors %}
-                <span style="color: red;">[{{ error }}]</span>
-            {% endfor %}
-        </p>
-        <p>{{ form.submit() }}</p>
+        <div class="mb-3">
+            <label for="username" class="form-label">Имя пользователя</label>
+            <input type="text" step="0.1" class="form-control" id="username" name="username" required />
+        </div>
+        <div class="mb-3">
+            <label for="email" class="form-label">Email</label>
+            <input type="email" step="0.1" class="form-control" id="email" name="email" required />
+        </div>
+        <div class="mb-3">
+            <label for="password" class="form-label">Пароль</label>
+            <input type="password" step="0.1" class="form-control" id="password" name="password" required />
+        </div>
+        <div class="mb-3">
+            <label for="password_confirm" class="form-label">Подтверждение пароля</label>
+            <input type="password" step="0.1" class="form-control" id="password_confirm" name="password_confirm" required />
+        </div>
+        {% if error %}
+        <p class="text-danger">Ошибка: {{error}}</p>
+        {% endif %}
+        <button type="submit" class="btn btn-success">Зарегистрировать</button>
     </form>
 {% endblock %}

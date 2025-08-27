@@ -33,24 +33,14 @@ class Cat(Base):
     image_path = CharField(null=True)
 
 
-# class User(UserMixin, Base):
-#     username = CharField(unique=True)
-#     email = CharField(unique=True)
-#     password_hash = CharField()
-#
-#     def set_password(self, password):
-#         self.password_hash = generate_password_hash(password)
-#
-#     def check_password(self, password):
-#         return check_password_hash(self.password_hash, password)
-
-# @login.user_loader
-# def load_user(user_id):
-#     return User.get_or_none(User.id == user_id)
+class User(Base):
+    username = CharField(unique=True)
+    email = CharField(unique=True)
+    password_hash = CharField()
 
 
 db.connect()
-db.create_tables((Cat, Breed, Gender))
+db.create_tables((Cat, Breed, Gender, User))
 
 if not Gender.select().exists():
     Gender.insert_many([
