@@ -36,6 +36,8 @@ def add_cat():
         if image:
             image.save('media/' + image.filename)
             image = 'media/' + image.filename
+        else:
+            image = None
 
         Cat.create(
             name=name,

@@ -3,6 +3,7 @@ from wtforms import StringField, PasswordField, SubmitField
 from wtforms.validators import DataRequired, Email, EqualTo, ValidationError
 from models import User  # Импортируйте вашу модель User
 
+
 class RegistrationForm(FlaskForm):
     username = StringField('Username', validators=[DataRequired()])
     email = StringField('Email', validators=[DataRequired(), Email()])
@@ -19,6 +20,7 @@ class RegistrationForm(FlaskForm):
         user = User.get_or_none(User.email == email.data)
         if user:
             raise ValidationError('Email already exists.')
+
 
 class LoginForm(FlaskForm):
     username = StringField('Username', validators=[DataRequired()])
